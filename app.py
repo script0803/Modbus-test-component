@@ -162,13 +162,16 @@ class ModbusApp:
 
     def read_float_register(self, address):
         if self.client:
-            count = 2
-            # print(self.slave_id_var.get())
-            result = self.client.read_holding_registers(address, count, slave=self.slave_id_var.get())
-            if not result.isError():
-                decoder = BinaryPayloadDecoder.fromRegisters(result.registers, byteorder=Endian.BIG, wordorder=Endian.BIG)
-                return decoder.decode_32bit_float()
-            else:
+            try:
+                count = 2
+                result = self.client.read_holding_registers(address, count, slave=self.slave_id_var.get())
+                if not result.isError():
+                    decoder = BinaryPayloadDecoder.fromRegisters(result.registers, byteorder=Endian.BIG, wordorder=Endian.BIG)
+                    return decoder.decode_32bit_float()
+                else:
+                    return None
+            except Exception as e:
+                messagebox.showerror("Error", f"Exception occurred: {e}")
                 return None
 
     def read_data(self):
@@ -182,6 +185,9 @@ class ModbusApp:
 
         for name, address in data_points.items():
             value = self.read_float_register(address)
+            if value is None:
+                messagebox.showerror("Error", f"Failed to read data. Stopping reads.")
+                break
             self.result_text.insert(tk.END, f"{name}: {value}\n")
     
     def toggle_continuous_read(self):
